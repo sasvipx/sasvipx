@@ -1,5 +1,5 @@
 // ===================================
-// 🔥 ALEXA AI (NO DATABASE VERSION)
+// 🔥 ALEXA AI (READY VERSION)
 // ===================================
 
 const express = require("express");
@@ -90,16 +90,29 @@ function handleCommands(text, user) {
     return null;
 }
 
-// ================= ALEXA =================
+// ================= ALEXA ENDPOINT =================
 app.post("/alexa", async (req, res) => {
+    console.log("🔥 REQUEST:", JSON.stringify(req.body, null, 2));
+
     let userText = "مرحبا";
     let userId = "guest";
 
     try {
         userId = req.body.session.user.userId;
-        userText =
-            req.body.request.intent.slots.question.value || "مرحبا";
-    } catch (e) {}
+
+        if (
+            req.body.request &&
+            req.body.request.intent &&
+            req.body.request.intent.slots &&
+            req.body.request.intent.slots.question &&
+            req.body.request.intent.slots.question.value
+        ) {
+            userText = req.body.request.intent.slots.question.value;
+        }
+
+    } catch (e) {
+        console.log("Error:", e);
+    }
 
     if (!memory[userId]) {
         memory[userId] = {
@@ -118,14 +131,16 @@ app.post("/alexa", async (req, res) => {
                 outputSpeech: {
                     type: "PlainText",
                     text: command
-                }
+                },
+                shouldEndSession: false
             }
         });
     }
 
-    const reply = await askAI(user, userText);
+    try {
+        const reply = await askAI(user, userText);
 
-    const ssml = `
+        const ssml = `
 <speak>
   <voice name="Zeina">
     <prosody rate="medium" pitch="+2%">
@@ -134,18 +149,32 @@ app.post("/alexa", async (req, res) => {
   </voice>
 </speak>`;
 
-    res.json({
-        version: "1.0",
-        response: {
-            outputSpeech: {
-                type: "SSML",
-                ssml: ssml
-            },
-            shouldEndSession: false
-        }
-    });
+        res.json({
+            version: "1.0",
+            response: {
+                outputSpeech: {
+                    type: "SSML",
+                    ssml: ssml
+                },
+                shouldEndSession: false
+            }
+        });
+
+    } catch (err) {
+        console.log("AI ERROR:", err.message);
+
+        res.json({
+            version: "1.0",
+            response: {
+                outputSpeech: {
+                    type: "PlainText",
+                    text: "صار خطأ، حاول مرة ثانية"
+                }
+            }
+        });
+    }
 });
 
 // ================= RUN =================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("🔥 AI RUNNING WITHOUT DB"));
+app.listen(PORT, () => console.log("🔥 SERVER RUNNING"));
