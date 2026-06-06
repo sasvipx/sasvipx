@@ -91,7 +91,7 @@ function handleCommands(text, user) {
 }
 
 // ================= ALEXA =================
-app.post("/", async (req, res) => {
+app.post("/alexa", async (req, res) => {
     let userText = "مرحبا";
     let userId = "guest";
 
